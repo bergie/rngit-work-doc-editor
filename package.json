@@ -6,6 +6,9 @@
   "author": "Henri Bergius <henri.bergius@iki.fi>",
   "type": "module",
   "main": "src/index.js",
+  "exports": {
+    ".": "./src/index.js"
+  },
   "bin": {
     "rngit-work-tui": "bin/rngit-work-tui.js"
   },
@@ -21,10 +24,11 @@
     "src"
   ],
   "scripts": {
-    "lint": "npx @biomejs/biome check --use-editorconfig=true src/ bin/ test/",
-    "format": "npx @biomejs/biome check --use-editorconfig=true --write src/ bin/ test/",
+    "lint": "npx @biomejs/biome check --use-editorconfig=true src/ bin/ test/ scripts/",
+    "typecheck": "tsc --noEmit",
+    "format": "npx @biomejs/biome check --use-editorconfig=true --write src/ bin/ test/ scripts/",
     "start": "node bin/rngit-work-tui.js",
-    "test": "node --test --test-force-exit test/*.test.js"
+    "test": "tsc --noEmit && node --test --test-force-exit test/*.test.js"
   },
   "engines": {
     "node": ">=22"
@@ -40,6 +44,9 @@
     "wrap-ansi": "^9.0.0"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.0.0"
+    "@biomejs/biome": "^2.0.0",
+    "@types/node": "^26.6.4",
+    "@types/react": "^19.3.0",
+    "typescript": "^7.0.2"
   }
 }

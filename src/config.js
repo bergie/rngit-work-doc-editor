@@ -26,7 +26,7 @@ export const SCOPES = ["active", "completed", "proposed", "all"];
  * URLs (e.g. `` `rns://...` ``) are captured cleanly.
  */
 export const RNS_URL_RE =
-	/rns:\/\/[0-9a-fA-F]{32}\/[^\s"'`)\]>]+\/[^\s"'`)\]>]+/;
+  /rns:\/\/[0-9a-fA-F]{32}\/[^\s"'`)\]>]+\/[^\s"'`)\]>]+/;
 
 /**
  * Primary identity: the human's rngit client identity. Standard 64-byte
@@ -35,10 +35,10 @@ export const RNS_URL_RE =
  * @returns {string}
  */
 export function primaryIdentityPath() {
-	return (
-		process.env.RNGIT_PRIMARY_IDENTITY ??
-		join(homedir(), ".rngit", "client_identity")
-	);
+  return (
+    process.env.RNGIT_PRIMARY_IDENTITY ??
+    join(homedir(), ".rngit", "client_identity")
+  );
 }
 
 /**
@@ -48,11 +48,11 @@ export function primaryIdentityPath() {
  * @returns {string|null}
  */
 export function secondaryIdentityPath() {
-	if (process.env.RNGIT_SECONDARY_IDENTITY === "") return null;
-	return (
-		process.env.RNGIT_SECONDARY_IDENTITY ??
-		join(homedir(), ".pi-rngit-work", "identity.key")
-	);
+  if (process.env.RNGIT_SECONDARY_IDENTITY === "") return null;
+  return (
+    process.env.RNGIT_SECONDARY_IDENTITY ??
+    join(homedir(), ".pi-rngit-work", "identity.key")
+  );
 }
 
 /**
@@ -62,19 +62,19 @@ export function secondaryIdentityPath() {
  * @returns {string}
  */
 export function cacheDirectory() {
-	return (
-		process.env.RNGIT_WORK_TUI_CACHE ??
-		join(homedir(), ".cache", "rngit-work-tui")
-	);
+  return (
+    process.env.RNGIT_WORK_TUI_CACHE ??
+    join(homedir(), ".cache", "rngit-work-tui")
+  );
 }
 
 /**
  * @returns {{rnsHost: string|null, rnsPort: number|null}}
  */
 export function rnsEndpoint() {
-	const host = process.env.RNS_HOST ?? null;
-	const port = process.env.RNS_PORT ? Number(process.env.RNS_PORT) : null;
-	return { rnsHost: host, rnsPort: port };
+  const host = process.env.RNS_HOST ?? null;
+  const port = process.env.RNS_PORT ? Number(process.env.RNS_PORT) : null;
+  return { rnsHost: host, rnsPort: port };
 }
 
 /** Max time to learn the remote node identity (path solicitation). */

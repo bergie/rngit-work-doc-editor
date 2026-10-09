@@ -14,9 +14,9 @@
 
 /** Scope → available lifecycle operations. */
 export const TRANSITIONS = {
-	active: ["complete"],
-	proposed: ["activate"],
-	completed: ["activate"],
+  active: ["complete"],
+  proposed: ["activate"],
+  completed: ["activate"],
 };
 
 /**
@@ -25,7 +25,13 @@ export const TRANSITIONS = {
  * @returns {("complete"|"activate")[]}
  */
 export function availableTransitions(scope) {
-	return TRANSITIONS[scope] ?? [];
+  return (
+    (scope !== undefined &&
+      /** @type {Record<string, ("complete"|"activate")[]>} */ (TRANSITIONS)[
+        scope
+      ]) ||
+    []
+  );
 }
 
 /**
@@ -35,5 +41,5 @@ export function availableTransitions(scope) {
  * @returns {boolean}
  */
 export function canTransition(scope, operation) {
-	return availableTransitions(scope).includes(operation);
+  return availableTransitions(scope).includes(operation);
 }

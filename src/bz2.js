@@ -21,15 +21,15 @@ import BZip2 from "@digitaldefiance/bzip2-wasm";
  * @returns {Promise<{compress: (data: Uint8Array) => Uint8Array, decompress: (data: Uint8Array, outputLen: number) => Uint8Array}>}
  */
 export async function createBz2() {
-	const bz = new BZip2();
-	await bz.init();
-	return {
-		/** @param {Uint8Array} data */
-		compress: (data) => bz.compress(data),
-		/**
-		 * @param {Uint8Array} data
-		 * @param {number} outputLen - Expected uncompressed length (from the adv).
-		 */
-		decompress: (data, outputLen) => bz.decompress(data, outputLen),
-	};
+  const bz = new BZip2();
+  await bz.init();
+  return {
+    /** @param {Uint8Array} data */
+    compress: (data) => bz.compress(data),
+    /**
+     * @param {Uint8Array} data
+     * @param {number} outputLen - Expected uncompressed length (from the adv).
+     */
+    decompress: (data, outputLen) => bz.decompress(data, outputLen),
+  };
 }

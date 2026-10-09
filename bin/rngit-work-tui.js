@@ -7,8 +7,8 @@
  */
 
 if (!process.stdout.isTTY) {
-	console.error("rngit-work-tui requires an interactive terminal (TTY).");
-	process.exit(1);
+  console.error("rngit-work-tui requires an interactive terminal (TTY).");
+  process.exit(1);
 }
 
 const { run } = await import("../src/tui/app.js");

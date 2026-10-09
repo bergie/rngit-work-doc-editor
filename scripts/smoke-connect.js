@@ -5,51 +5,57 @@
  *
  * Usage: node scripts/smoke-connect.js <dir-with-rngit-repo>
  */
-import { scanForRepos } from "../src/scan.js";
-import { loadPrimaryIdentity, identityHashHex } from "../src/identity.js";
-import { createReticulum } from "../src/work-client.js";
+
+import { fromHex } from "@reticulum/core";
 import { cacheDirectory, rnsEndpoint } from "../src/config.js";
+import { identityHashHex, loadPrimaryIdentity } from "../src/identity.js";
 import { formatTimestamp } from "../src/markdown.js";
+import { scanForRepos } from "../src/scan.js";
+import { createReticulum, WorkClient } from "../src/work-client.js";
 
 const dir = process.argv[2] ?? process.cwd();
 const repos = scanForRepos(dir);
 if (!repos.length) {
-	console.error(`No rngit repositories found under ${dir}`);
-	process.exit(1);
+  console.error(`No rngit repositories found under ${dir}`);
+  process.exit(1);
 }
 const repo = repos[0];
 console.log(`Target: ${repo.repoPath} (${repo.url})`);
 
 const identity = await loadPrimaryIdentity();
 if (!identity) {
-	console.error("No primary identity");
-	process.exit(1);
+  console.error("No primary identity");
+  process.exit(1);
 }
 console.log(`Primary identity: ${identityHashHex(identity)}`);
 
-const { WorkClient } = await import("../src/work-client.js");
-const rns = await createReticulum({ cacheDir: cacheDirectory(), ...rnsEndpoint() });
+const rns = await createReticulum({
+  cacheDir: cacheDirectory(),
+  ...rnsEndpoint(),
+});
 console.log("Reticulum stack up");
 
 const client = new WorkClient({
-	rns,
-	identity,
-	targetHash: Buffer.from(repo.hash, "hex"),
-	group: repo.group,
-	repo: repo.repo,
+  rns,
+  identity,
+  targetHash: fromHex(repo.hash),
+  group: repo.group,
+  repo: repo.repo,
 });
 try {
-	await client.connect();
-	console.log("Link established");
-	const result = await client.list("all");
-	for (const [scope, docs] of Object.entries(result)) {
-		console.log(`${scope}: ${(docs ?? []).length}`);
-		for (const d of docs ?? []) {
-			console.log(`  #${d.id} ${d.title} by ${(d.author ?? "?").slice(0, 8)} ${formatTimestamp(d.created)}`);
-		}
-	}
-	console.log("SMOKE OK");
+  await client.connect();
+  console.log("Link established");
+  const result = await client.list("all");
+  for (const [scope, docs] of Object.entries(result)) {
+    console.log(`${scope}: ${(docs ?? []).length}`);
+    for (const d of docs ?? []) {
+      console.log(
+        `  #${d.id} ${d.title} by ${(d.author ?? "?").slice(0, 8)} ${formatTimestamp(d.created)}`,
+      );
+    }
+  }
+  console.log("SMOKE OK");
 } finally {
-	await client.close();
-	await rns.stop();
+  await client.close();
+  await rns.stop();
 }

@@ -13,7 +13,7 @@
  */
 
 import { readFileSync } from "node:fs";
-import { Identity } from "@reticulum/core";
+import { Identity, toHex } from "@reticulum/core";
 import { primaryIdentityPath, secondaryIdentityPath } from "./config.js";
 
 /**
@@ -24,13 +24,13 @@ import { primaryIdentityPath, secondaryIdentityPath } from "./config.js";
  * @returns {Promise<Identity|null>}
  */
 export async function identityFromKeyBytes(bytes) {
-	if (bytes.length === 128) {
-		return Identity.fromBytes(bytes);
-	}
-	if (bytes.length === 64) {
-		return Identity.fromPrivateKey(bytes);
-	}
-	return null;
+  if (bytes.length === 128) {
+    return Identity.fromBytes(bytes);
+  }
+  if (bytes.length === 64) {
+    return Identity.fromPrivateKey(bytes);
+  }
+  return null;
 }
 
 /**
@@ -41,23 +41,25 @@ export async function identityFromKeyBytes(bytes) {
  * @throws {Error} when the file exists but holds unusable key material.
  */
 export async function loadIdentityFile(path, label) {
-	let bytes;
-	try {
-		bytes = readFileSync(path);
-	} catch (err) {
-		if (/** @type {NodeJS.ErrnoException} */ (err).code === "ENOENT") {
-			return null;
-		}
-		throw new Error(`Cannot read ${label} identity at ${path}: ${err.message}`);
-	}
-	const identity = await identityFromKeyBytes(bytes);
-	if (!identity) {
-		throw new Error(
-			`${label} identity at ${path} is ${bytes.length} bytes; expected a 64-byte ` +
-				"private-key blob or a 128-byte private+public export",
-		);
-	}
-	return identity;
+  let bytes;
+  try {
+    bytes = readFileSync(path);
+  } catch (err) {
+    if (/** @type {NodeJS.ErrnoException} */ (err).code === "ENOENT") {
+      return null;
+    }
+    throw new Error(
+      `Cannot read ${label} identity at ${path}: ${/** @type {Error} */ (err).message}`,
+    );
+  }
+  const identity = await identityFromKeyBytes(bytes);
+  if (!identity) {
+    throw new Error(
+      `${label} identity at ${path} is ${bytes.length} bytes; expected a 64-byte ` +
+        "private-key blob or a 128-byte private+public export",
+    );
+  }
+  return identity;
 }
 
 /**
@@ -65,7 +67,7 @@ export async function loadIdentityFile(path, label) {
  * @returns {Promise<Identity|null>}
  */
 export async function loadPrimaryIdentity() {
-	return loadIdentityFile(primaryIdentityPath(), "Primary (rngit)");
+  return loadIdentityFile(primaryIdentityPath(), "Primary (rngit)");
 }
 
 /**
@@ -74,9 +76,9 @@ export async function loadPrimaryIdentity() {
  * @returns {Promise<Identity|null>}
  */
 export async function loadSecondaryIdentity() {
-	const path = secondaryIdentityPath();
-	if (!path) return null;
-	return loadIdentityFile(path, "Secondary (pi)");
+  const path = secondaryIdentityPath();
+  if (!path) return null;
+  return loadIdentityFile(path, "Secondary (pi)");
 }
 
 /**
@@ -85,5 +87,5 @@ export async function loadSecondaryIdentity() {
  * @returns {string}
  */
 export function identityHashHex(identity) {
-	return Buffer.from(identity.identityHash).toString("hex");
+  return toHex(identity.identityHash);
 }
