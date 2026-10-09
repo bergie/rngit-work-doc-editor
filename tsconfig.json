@@ -12,5 +12,5 @@
 		"noImplicitOverride": true,
 		"skipLibCheck": true
 	},
-	"include": ["src/**/*.js", "bin/**/*.js", "test/**/*.js", "scripts/**/*.js", "types/**/*.d.ts"]
+	"include": ["src/**/*.js", "bin/**/*.js", "test/**/*.js", "scripts/**/*.js", "src/**/*.d.ts"]
 }
