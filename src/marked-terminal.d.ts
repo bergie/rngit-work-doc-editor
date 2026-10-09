@@ -3,7 +3,10 @@
  * single marked extension factory.
  */
 declare module "marked-terminal" {
-  /** @param {Record<string, any>} options
-   *  @returns {any} marked extension */
-  export function markedTerminal(options?: Record<string, any>): any;
+  /**
+   * @param {Record<string, unknown>} [options] - Renderer options.
+   * @returns {any} marked extension
+   */
+  // biome-ignore lint/suspicious/noExplicitAny: the underlying renderer is untyped
+  export function markedTerminal(options?: Record<string, unknown>): any;
 }

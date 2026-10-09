@@ -518,6 +518,7 @@ function DocViewScreen({
  * @param {(content: string) => void} props.onComplete
  */
 function EditorRunner({ editor, doc, onComplete }) {
+  // biome-ignore lint/correctness/useExhaustiveDependencies: runs exactly once per mount; the editor kind, document snapshot and callback are intentionally frozen at open time
   useEffect(() => {
     let cancelled = false;
     (async () => {
