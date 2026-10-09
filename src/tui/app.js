@@ -430,13 +430,12 @@ function DocViewScreen({
   const commentLines = useMemo(() => {
     const out = [];
     for (const c of comments) {
-      out.push(
-        "",
-        `── update #${c.id} · ${formatTimestamp(c.created)} `.padEnd(
-          contentWidth,
-          "─",
-        ),
-      );
+      const parts = [
+        `update #${c.id}`,
+        ...(c.author ? [`by ${c.author.slice(0, 8)}`] : []),
+        formatTimestamp(c.created),
+      ];
+      out.push("", `── ${parts.join(" · ")} `.padEnd(contentWidth, "─"));
       out.push(...renderMarkdownLines(c.content ?? "", contentWidth));
     }
     return out;

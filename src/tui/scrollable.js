@@ -39,6 +39,10 @@ export function Scrollable({ lines, header, scrollHint = "", active = true }) {
         setScroll((/** @type {number} */ s) => Math.max(0, s - 1));
       else if (key.downArrow)
         setScroll((/** @type {number} */ s) => Math.min(maxScroll, s + 1));
+      else if (_input === " ")
+        setScroll((/** @type {number} */ s) =>
+          Math.min(maxScroll, s + viewportHeight),
+        );
       else if (key.pageUp || (key.ctrl && _input === "b"))
         setScroll((/** @type {number} */ s) => Math.max(0, s - viewportHeight));
       else if (key.pageDown || (key.ctrl && _input === "f"))
@@ -60,7 +64,12 @@ export function Scrollable({ lines, header, scrollHint = "", active = true }) {
     h(
       Box,
       { flexDirection: "column", paddingLeft: 1, flexGrow: 1 },
-      visible.map((line, i) => h(Text, { key: scroll + i }, line)),
+      // Blank content lines must still occupy a row: Ink collapses empty
+      // Text elements, which would make the viewport height vary with how
+      // blank-heavy the visible window is.
+      visible.map((line, i) =>
+        h(Text, { key: scroll + i }, line === "" ? " " : line),
+      ),
     ),
     h(
       Box,

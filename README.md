@@ -37,6 +37,7 @@ The app starts fullscreen in the alternate screen buffer. Keys:
 | `u` | Write an update (comment) on the open document via the editor |
 | `i` | Switch between the primary and secondary identity |
 | `g` / `G` | Jump to the top / bottom of a document |
+| Space | Page down through a document |
 | `q` | Quit (also Ctrl-C) |
 
 Failed actions report the node's error in the status bar. When a write action is rejected as "not allowed" with the primary identity and a secondary identity exists, the app offers to retry with the secondary.
