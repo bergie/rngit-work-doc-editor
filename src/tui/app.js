@@ -16,6 +16,7 @@ import {
   useState,
 } from "react";
 import { cacheDirectory, rnsEndpoint } from "../config.js";
+import { runEditor } from "../editor.js";
 import {
   identityHashHex,
   loadPrimaryIdentity,
@@ -393,18 +394,24 @@ function DocListScreen({
  * @param {object} props
  * @param {any} props.doc
  * @param {{role: string, hash: string}} props.identity
+ * @param {string|null} props.secondaryHash - Hash of the secondary identity, when loaded.
  * @param {boolean} props.inputEnabled
  * @param {(op: "complete"|"activate") => void} props.onAction
  * @param {() => void} props.onDelete
+ * @param {() => void} props.onEdit
+ * @param {() => void} props.onUpdate
  * @param {() => void} props.onBack
  * @param {() => void} props.onRefresh
  */
 function DocViewScreen({
   doc,
   identity,
+  secondaryHash,
   inputEnabled,
   onAction,
   onDelete,
+  onEdit,
+  onUpdate,
   onBack,
   onRefresh,
 }) {
@@ -448,12 +455,17 @@ function DocViewScreen({
   const canComplete = transitions.includes("complete");
   const canActivate = transitions.includes("activate");
   const canDelete = true;
+  // Editing is author-only: offer it when the active identity is the author,
+  // or when the secondary identity is (submitting then auto-uses it).
+  const canEdit = isMine || author === secondaryHash;
 
   useInput(
     (input, key) => {
       if (input === "c" && canComplete) onAction("complete");
       else if (input === "a" && canActivate) onAction("activate");
       else if (input === "d" && canDelete) onDelete();
+      else if (input === "e" && canEdit) onEdit();
+      else if (input === "u") onUpdate();
       else if (input === "r") onRefresh();
       else if (key.escape || input === "q" || key.leftArrow) onBack();
     },
@@ -482,7 +494,8 @@ function DocViewScreen({
   if (canActivate)
     actions.push(scope === "completed" ? "a re-activate" : "a activate");
   if (canDelete) actions.push("d delete");
-  actions.push("r refresh", "q back");
+  if (canEdit) actions.push("e edit");
+  actions.push("u update", "r refresh", "q back");
 
   return h(Scrollable, {
     lines: allLines,
@@ -493,6 +506,38 @@ function DocViewScreen({
 }
 
 // --- Root --------------------------------------------------------------------
+
+/**
+ * Suspend the TUI (leave the alternate screen), run the external editor on
+ * the document body or an empty update draft, resume, and hand the edited
+ * text back.
+ *
+ * @param {object} props
+ * @param {{kind: "edit"|"update"}} props.editor
+ * @param {any} props.doc - The open document.
+ * @param {(content: string) => void} props.onComplete
+ */
+function EditorRunner({ editor, doc, onComplete }) {
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      process.stdout.write("\x1b[?1049l");
+      const content = await runEditor(
+        editor.kind === "edit" ? (doc?.content ?? "") : "",
+        { id: doc?.id ?? "?", kind: editor.kind },
+      );
+      if (cancelled) return;
+      // Re-enter the alternate screen and start from a clean slate.
+      process.stdout.write("\x1b[?1049h\x1b[H\x1b[2J");
+      onComplete(content);
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  return h(Box, { height: 1 });
+}
 
 /**
  * @param {object} props
@@ -530,6 +575,9 @@ function App({ session }) {
     /** @type {"primary"|"secondary"} */ ("primary"),
   );
   const roleRef = useRef(/** @type {"primary"|"secondary"} */ ("primary"));
+  const [editor, setEditor] = useState(
+    /** @type {{kind: "edit"|"update"}|null} */ (null),
+  );
 
   // Load identities once on mount.
   useEffect(() => {
@@ -654,7 +702,7 @@ function App({ session }) {
    * retry with the secondary via a confirmation dialog.
    *
    * @param {(client: any) => Promise<any>} action - Performs the operation.
-   * @param {{useRole: "primary"|"secondary", onSuccess: (client: any) => void}} options
+   * @param {{useRole: "primary"|"secondary", onSuccess: (client: any, result: any) => void}} options
    */
   async function performWrite(action, { useRole, onSuccess }) {
     if (!repo || !doc) return;
@@ -662,8 +710,8 @@ function App({ session }) {
     setBusy(true);
     try {
       const client = await session.getClient(repo, useRole);
-      await action(client);
-      onSuccess(client);
+      const result = await action(client);
+      onSuccess(client, result);
     } catch (err) {
       if (
         err instanceof WorkError &&
@@ -731,7 +779,76 @@ function App({ session }) {
     });
   }
 
+  /**
+   * Opens the external editor for editing the document body or drafting an
+   * update. The TUI suspends while the editor holds the terminal.
+   * @param {"edit"|"update"} kind
+   */
+  function runEditorAction(kind) {
+    if (!doc) return;
+    clearMessages();
+    setEditor({ kind });
+  }
+
+  /**
+   * Applies the content returned by the external editor.
+   * @param {string} content
+   */
+  function handleEditorDone(content) {
+    const kind = editor?.kind;
+    setEditor(null);
+    if (!doc || !repo) return;
+    if (kind === "edit") {
+      if (content.trim() === (doc.content ?? "").trim()) {
+        setNotice("Edit discarded — no changes");
+        return;
+      }
+      performWrite(
+        (client) =>
+          client.edit(doc.id, content, { scope: doc.meta?.scope ?? "active" }),
+        {
+          useRole: roleRef.current,
+          onSuccess: async (client) => {
+            setDoc(await client.view(doc.id, "all"));
+            setNotice(`Document #${doc.id} edited`);
+            refreshDocs();
+          },
+        },
+      );
+    } else {
+      if (!content.trim()) {
+        setNotice("Update discarded — empty");
+        return;
+      }
+      performWrite(
+        (client) => client.update(doc.id, content, doc.meta?.scope ?? "active"),
+        {
+          useRole: roleRef.current,
+          onSuccess: async (client, result) => {
+            setDoc(await client.view(doc.id, "all"));
+            setNotice(
+              `Update #${result?.id ?? "?"} added to document #${doc.id}`,
+            );
+            refreshDocs();
+          },
+        },
+      );
+    }
+  }
+
   // Global fatal screen: no usable identity.
+  if (editor) {
+    return h(
+      Box,
+      { flexDirection: "column", height: rows },
+      h(EditorRunner, {
+        editor,
+        doc,
+        onComplete: handleEditorDone,
+      }),
+    );
+  }
+
   if (fatal) {
     return h(
       Box,
@@ -757,7 +874,7 @@ function App({ session }) {
         ? "→/Enter open · r rescan · q quit"
         : screen === "docs"
           ? "Enter open · r refresh · i identity · Esc back · q quit"
-          : "←/q back · c/a/d actions · r refresh",
+          : "←/q back · c/a/d/e/u actions · r refresh",
     identity: identityInfo,
     notice,
   });
@@ -818,6 +935,9 @@ function App({ session }) {
         ? h(DocViewScreen, {
             doc,
             identity: identityInfo ?? { role, hash: "" },
+            secondaryHash: session.identities.secondary
+              ? identityHashHex(session.identities.secondary)
+              : null,
             inputEnabled: !busy && !confirm,
             onAction: (op) =>
               setConfirm({
@@ -829,6 +949,8 @@ function App({ session }) {
                 message: `Delete ${doc.meta?.scope ?? "active"} document #${doc.id} ("${doc.meta?.title ?? "Untitled"}")? Its number may be reused by new documents.`,
                 action: () => deleteDoc(),
               }),
+            onEdit: () => runEditorAction("edit"),
+            onUpdate: () => runEditorAction("update"),
             onBack: () => {
               clearMessages();
               setScreen("docs");

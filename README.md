@@ -33,6 +33,8 @@ The app starts fullscreen in the alternate screen buffer. Keys:
 | `c` | Complete the open document (active scope only) |
 | `a` | Activate the open document (proposed or completed scope) |
 | `d` | Delete the open document (with confirmation) |
+| `e` | Edit the open document body in `$VISUAL`/`$EDITOR` (author only) |
+| `u` | Write an update (comment) on the open document via the editor |
 | `i` | Switch between the primary and secondary identity |
 | `g` / `G` | Jump to the top / bottom of a document |
 | `q` | Quit (also Ctrl-C) |

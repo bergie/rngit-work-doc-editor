@@ -15,6 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 - Lifecycle actions following the state machine: `proposed → activate`, `active → complete`, `completed → re-activate`; delete available in every scope (deleted IDs may be reused by new documents).
 - Primary/secondary identity support: uses the human `~/.rngit/client_identity` by default and can fall back to the `~/.pi-rngit-work` identity when the primary is rejected or when the secondary authored the document.
 - Arrow-key navigation (`→` select/open, `←` back, with `q`/Ctrl-C to quit from the project list).
+- Editing documents and writing updates through the external editor (`$VISUAL`/`$EDITOR`): the TUI suspends while the editor holds the terminal, and unchanged or empty drafts are discarded with a notice. Only the original author can edit; identity fallback applies to both operations.
 - Link robustness: automatic path re-solicitation and one link-establishment retry when the cached routing path is stale.
 - Headless smoke script (`scripts/smoke-connect.js`) for connectivity checks.
 - Unit tests for repository scanning, identity loading, the work-document wire format, markdown rendering and the lifecycle state machine (`node --test` plus `tsc --noEmit` type checking).

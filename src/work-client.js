@@ -31,6 +31,7 @@
 import {
   Destination,
   DestType,
+  LinkStatus,
   LogLevel,
   MsgPack,
   Reticulum,
@@ -317,12 +318,71 @@ export class WorkClient {
    * @param {Record<string, any>} fields
    * @returns {Promise<any>}
    */
+  /**
+   * Returns whether an error indicates the link went inactive (watchdog
+   * teardown of an idle link, stack restart, path change).
+   * @param {unknown} err
+   * @returns {boolean}
+   */
+  static isStaleLinkError(err) {
+    return (
+      err instanceof Error &&
+      /link must be active|link (is )?(closed|inactive)/i.test(err.message)
+    );
+  }
+
+  /**
+   * Ensures the link is active, re-establishing it when the watchdog has
+   * torn down an idle link. The remote identity is re-recalled cheaply from
+   * the transport cache (or re-solicited when the node restarted).
+   * @returns {Promise<void>}
+   */
+  async #ensureActiveLink() {
+    if (this.link && this.link.status === LinkStatus.ACTIVE) return;
+    await this.close();
+    try {
+      this.remoteIdentity = await this.rns.transport.recallOrSolicitIdentity(
+        this.targetHash,
+        this.pathTimeoutMs,
+      );
+    } catch (err) {
+      if (err instanceof Error && err.name === "UnknownIdentityError") {
+        throw new Error(
+          `Lost the path to ${toHex(this.targetHash)}. ` +
+            "Is the node still reachable?",
+        );
+      }
+      throw err;
+    }
+    await this.#openLink();
+  }
+
+  /**
+   * Sends a `/mgmt/work` request and decodes the response. Transparently
+   * re-establishes an inactive link and retries once — long editor sessions
+   * routinely outlive the link watchdog.
+   * @param {Record<string, any>} fields
+   * @returns {Promise<any>}
+   */
   async _send(fields) {
-    if (!this.link) throw new Error("Not connected; call connect() first.");
+    if (!this.rns) throw new Error("Not connected; call connect() first.");
+    await this.#ensureActiveLink();
+    if (!this.link) throw new Error("Failed to establish an active link.");
     const data = buildRequest(this.repoPath, fields);
-    const response = await this.link.request(PATH_WORK, data, {
-      timeout: this.requestTimeoutMs,
-    });
+    let response;
+    try {
+      response = await this.link.request(PATH_WORK, data, {
+        timeout: this.requestTimeoutMs,
+      });
+    } catch (err) {
+      if (!WorkClient.isStaleLinkError(err)) throw err;
+      // Link went inactive mid-flight: re-establish and retry once.
+      await this.#ensureActiveLink();
+      if (!this.link) throw new Error("Failed to establish an active link.");
+      response = await this.link.request(PATH_WORK, data, {
+        timeout: this.requestTimeoutMs,
+      });
+    }
     return parseResponse(response);
   }
 
