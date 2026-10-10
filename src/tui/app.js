@@ -275,6 +275,7 @@ function StatusBar({ hints, identity, notice, error, busy, busyLabel }) {
  * @param {() => void} props.onRescan
  * @param {string} props.startDir
  * @param {number} props.maxVisible
+ * @param {string|null} props.initialKey - `repoPath` of the repository we returned from, if any.
  */
 function RepoScreen({
   repos,
@@ -283,6 +284,7 @@ function RepoScreen({
   onRescan,
   startDir,
   maxVisible,
+  initialKey,
 }) {
   useInput((_input, _key) => {
     // Quitting is deliberate on the top-level screen: only q (or Ctrl-C).
@@ -310,6 +312,8 @@ function RepoScreen({
         })),
         onSelect,
         maxVisible,
+        initialKey,
+        itemKey: (/** @type {{value: RepoInfo}} */ item) => item.value.repoPath,
         emptyMessage:
           "No rngit repositories found here. Press r to rescan, q to quit.",
       }),
@@ -335,6 +339,7 @@ const SCOPE_ORDER = [
  * @param {() => void} props.onSwitchIdentity
  * @param {{role: string, hash: string}} props.identity
  * @param {number} props.maxVisible
+ * @param {string|null} props.initialKey - Id (as string) of the document we returned from, if any.
  */
 function DocListScreen({
   repo,
@@ -345,6 +350,7 @@ function DocListScreen({
   onSwitchIdentity,
   identity,
   maxVisible,
+  initialKey,
 }) {
   const items = useMemo(() => {
     if (!docs) return [];
@@ -382,6 +388,9 @@ function DocListScreen({
         onSelect: onOpen,
         onCancel: onBack,
         maxVisible,
+        initialKey,
+        itemKey: (/** @type {{value: {id: any}}} */ item) =>
+          String(item.value.id),
         emptyMessage: docs ? "No work documents in any scope." : undefined,
       }),
     ),
@@ -578,6 +587,15 @@ function App({ session }) {
   const [editor, setEditor] = useState(
     /** @type {{kind: "edit"|"update"}|null} */ (null),
   );
+  // Where we came from: `repoPath` of the repository last entered and the id
+  // of the document last opened. Used to restore the list cursor when
+  // navigating back, so the highlight lands on the item we came out of.
+  const [lastRepoKey, setLastRepoKey] = useState(
+    /** @type {string|null} */ (null),
+  );
+  const [lastDocKey, setLastDocKey] = useState(
+    /** @type {string|null} */ (null),
+  );
 
   // Load identities once on mount.
   useEffect(() => {
@@ -630,6 +648,7 @@ function App({ session }) {
   /** Opens the document list for a repository. */
   async function selectRepo(/** @type {RepoInfo} */ selected) {
     clearMessages();
+    setLastRepoKey(selected.repoPath);
     setRepo(selected);
     setScreen("docs");
     setDocs(null);
@@ -665,6 +684,7 @@ function App({ session }) {
   /** Opens a document for reading. */
   async function openDoc(/** @type {any} */ selected) {
     clearMessages();
+    setLastDocKey(String(selected.id));
     setScreen("view");
     setDoc(null);
     setLoading("fetching document…");
@@ -773,6 +793,7 @@ function App({ session }) {
           `Document #${doc.id} deleted — its number may be reused by new documents`,
         );
         setDoc(null);
+        setLastDocKey(null);
         setScreen("docs");
         refreshDocs();
       },
@@ -890,6 +911,7 @@ function App({ session }) {
           repos,
           startDir: process.cwd(),
           maxVisible: reposListMax,
+          initialKey: lastRepoKey,
           onSelect: selectRepo,
           onQuit: () => exit(),
           onRescan: rescan,
@@ -910,6 +932,7 @@ function App({ session }) {
           repo: /** @type {RepoInfo} */ (repo),
           docs,
           maxVisible: docsListMax,
+          initialKey: lastDocKey,
           onOpen: openDoc,
           onBack: () => {
             clearMessages();

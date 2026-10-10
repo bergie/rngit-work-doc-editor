@@ -7,7 +7,7 @@
  */
 
 import { Box, Text, useInput, useStdout } from "ink";
-import { createElement as h, useState } from "react";
+import { createElement as h, useEffect, useRef, useState } from "react";
 
 /**
  * Truncates a string with an ellipsis so it fits `width` columns (ANSI-free
@@ -24,6 +24,19 @@ function fit(text, width) {
 }
 
 /**
+ * Finds the index of the item matching `initialKey`, or -1 when there is no
+ * match (including an empty list).
+ * @param {Array<{label: string, hint?: string, value?: any}>} items
+ * @param {(item: any) => any} itemKey
+ * @param {any} initialKey
+ * @returns {number}
+ */
+export function findInitialIndex(items, itemKey, initialKey) {
+  if (initialKey === undefined || initialKey === null) return -1;
+  return items.findIndex((item) => itemKey(item) === initialKey);
+}
+
+/**
  * @param {object} props
  * @param {Array<{label: string, hint?: string, value?: any}>} props.items
  * @param {(item: any, index: number) => void} props.onSelect
@@ -31,6 +44,8 @@ function fit(text, width) {
  * @param {number} [props.maxVisible=12] - Windowed rows around the cursor.
  * @param {string} [props.emptyMessage="Nothing to show"]
  * @param {boolean} [props.active=true] - Whether key input is handled.
+ * @param {any} [props.initialKey] - Key of the item the cursor should start on (e.g. when returning to a list).
+ * @param {(item: any) => any} [props.itemKey] - Extracts the identity compared against `initialKey`. Defaults to the item value.
  */
 export function Select({
   items,
@@ -39,8 +54,14 @@ export function Select({
   maxVisible = 12,
   emptyMessage = "Nothing to show",
   active = true,
+  initialKey,
+  itemKey = (item) => item.value ?? item,
 }) {
   const [index, setIndex] = useState(0);
+  // Whether the user has moved the cursor themselves. Once they have, the
+  // cursor belongs to them: an arriving `initialKey` (or a list refresh)
+  // must not yank it back.
+  const moved = useRef(false);
   const { stdout } = useStdout();
   const tty = /** @type {import("node:tty").WriteStream} */ (stdout);
   const columns = tty.columns > 0 ? tty.columns : 80;
@@ -56,6 +77,9 @@ export function Select({
         return;
       }
       if (!items.length) return;
+      if (key.upArrow || key.downArrow || key.pageUp || key.pageDown) {
+        moved.current = true;
+      }
       if (key.upArrow || input === "k") {
         setIndex((/** @type {number} */ i) => Math.max(0, i - 1));
       } else if (key.downArrow || input === "j") {
@@ -74,6 +98,14 @@ export function Select({
     },
     { isActive: active },
   );
+
+  // Put the cursor on the item we came out of (e.g. the document whose
+  // viewer was just closed) as soon as the list carries it.
+  useEffect(() => {
+    if (moved.current) return;
+    const idx = findInitialIndex(items, itemKey, initialKey);
+    if (idx >= 0) setIndex(idx);
+  }, [items, initialKey, itemKey]);
 
   if (!items.length) {
     return h(

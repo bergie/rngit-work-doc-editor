@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
+### Added
+
+- Returning to a list places the cursor on the item we came out of: the document list highlights the document whose viewer was just closed, and the repository picker highlights the repository last entered. The cursor stops following once the user moves it themselves.
+
 ## [0.3.0] - 2026-10-10
 
 ### Added
