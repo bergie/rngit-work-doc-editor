@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
+### Added
+
+- Space pages down in the document viewer.
+- Update (comment) headers show the author identity hash.
+- Process identification: the app runs as `rngit-work-tui` in process lists and tmux tab titles instead of `node` (tmux needs `allow-rename on` to honor application titles).
+- Package metadata (`repository`, `homepage`, `bugs`) for npm provenance publishing.
+
+### Fixed
+
+- Document viewport height no longer varies while scrolling: blank markdown lines now occupy a terminal row (Ink collapses empty text elements, which made the content area shrink in blank-heavy sections).
+- Markdown tests are deterministic regardless of terminal color support (TTY vs `FORCE_COLOR`): content assertions strip ANSI styling before comparing.
+
 ## [0.2.0] - 2026-10-09
 
 ### Added
