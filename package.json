@@ -1,6 +1,6 @@
 {
   "name": "rngit-work-doc-editor",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Terminal UI for reading and managing rngit work documents over the Reticulum mesh",
   "license": "EUPL-1.2",
   "author": "Henri Bergius <henri.bergius@iki.fi>",
