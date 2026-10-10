@@ -993,6 +993,9 @@ export function run() {
   // Run fullscreen: switch to the alternate screen buffer and restore the
   // previous terminal content on the way out.
   process.stdout.write("\x1b[?1049h\x1b[H\x1b[2J");
+  // Re-assert the window title after the screen switch — some terminals and
+  // tmux reset it then.
+  process.stdout.write("\x1b]2;rngit-work-tui\x07");
   process.on("exit", () => {
     process.stdout.write("\x1b[?1049l");
   });
