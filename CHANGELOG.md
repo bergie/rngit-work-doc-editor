@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-11-24
+
 ### Changed
 
 - Update `@reticulum/core` and `@reticulum/node` to 0.10.0: brings RNS 1.6.1 announce-stamp compatibility, JS-initiated link MTU discovery (larger transfer windows over interfaces that can carry bigger frames), and rngit hardening — pack-entry decompression and delta allocations are now size-bounded against malicious nodes.
