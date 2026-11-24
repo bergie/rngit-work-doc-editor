@@ -41,8 +41,8 @@
   },
   "dependencies": {
     "@digitaldefiance/bzip2-wasm": "^1.1.1",
-    "@reticulum/core": "^0.9.7",
-    "@reticulum/node": "^0.9.7",
+    "@reticulum/core": "^0.10.0",
+    "@reticulum/node": "^0.10.0",
     "ink": "^8.0.0",
     "marked": "^15.0.12",
     "marked-terminal": "^7.3.0",
@@ -50,7 +50,7 @@
     "wrap-ansi": "^9.0.0"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.0.0",
+    "@biomejs/biome": "^2.6.8",
     "@types/node": "^26.6.4",
     "@types/react": "^19.3.0",
     "typescript": "^7.0.2"

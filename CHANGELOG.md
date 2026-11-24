@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
+### Changed
+
+- Update `@reticulum/core` and `@reticulum/node` to 0.10.0: brings RNS 1.6.1 announce-stamp compatibility, JS-initiated link MTU discovery (larger transfer windows over interfaces that can carry bigger frames), and rngit hardening — pack-entry decompression and delta allocations are now size-bounded against malicious nodes.
+
 ### Added
 
 - Returning to a list places the cursor on the item we came out of: the document list highlights the document whose viewer was just closed, and the repository picker highlights the repository last entered. The cursor stops following once the user moves it themselves.
